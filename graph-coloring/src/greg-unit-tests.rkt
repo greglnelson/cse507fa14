@@ -1,6 +1,6 @@
 #lang racket
 
-(require "graph.rkt" "problems.rkt" "solver.rkt" "k-coloring.rkt")
+(require "graph.rkt" "problems.rkt" "solver.rkt" "k-coloring.rkt" rackunit)
 
 ; Extract all small easy problems (see problems.rkt):
 (define small-problems
@@ -17,6 +17,11 @@ small-problems
 (define small-graph
   (problem->graph (first small-problems)))
 
-(visualize small-graph)
+; variable numbers for graph encoding are unique
+;(check-pred 
 
-(visualize-degree small-graph)
+(append (node-color-pairs 0 2) (node-color-pairs 1 2))
+(all-node-color-pairs small-graph 2)
+;(visualize small-graph)
+
+;(visualize-degree small-graph)
