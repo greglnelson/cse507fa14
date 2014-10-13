@@ -16,5 +16,23 @@
 ; be colored with k colors.  Otherwise returns #f.
 ; The procedure accepts an optional solver% arugment.
 ; If not specified, the solver defaults to lingeling.
+; Notes - Greg Nelson
+; I added a trivial symmetry breakage heuristic, based on the problem
+; I take the node with the highest degree,
+;  and assert it will have the first color
+; I then take its highest degree neighbor
+;  and assert it will have the second color
 (define (k-coloring graph k [solver (lingeling)])
+  
+  
+  
+  
+  
   (error 'k-coloring "not implemented yet!"))
+
+
+; all-nodes-colored
+
+; no-neighbors-share-colors
+
+; 
