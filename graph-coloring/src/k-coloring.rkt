@@ -26,18 +26,21 @@
 ;  and assert it will have the second color
 ; Add another symmetry breakage by degree of node
 (define (k-coloring graph k [solver (lingeling)])
+  (define lookup (make-hash-node-color-to-variable graph k))
+  (define proxy-var-counter (make-counter (+ 1 (hash-count lookup))))
+  (define cnf (make-cnf graph k lookup proxy-var-counter))
+  cnf)
   
   
   
   
-  
-  (error 'k-coloring "not implemented yet!"))
+  ;(error 'k-coloring "not implemented yet!"))
 
+(define (make-cnf graph k lookup proxy-var-counter)
+  (append
+   (cnf-all-nodes-colored graph k lookup)
+   (cnf-no-edges-share-colors graph k lookup proxy-var-counter )))
 
-; all-nodes-colored
-(define (all-nodes-colored graph k)
-  (map cnf-node-has-at-least-one-color (nodes graph))
-  )
 
 (define (make-hash-node-color-to-variable graph k)
   ;(make-hash (map cons (all-node-color-pairs graph k) (in-range
@@ -63,14 +66,49 @@
   (for/list ([c (in-range k)])
     (list n c)))
 
-; no-neighbors-share-colors
-(define (cnf-node-has-at-least-one-color node k size)
-  (map (lambda (c) (node-colored-with-k node c size)) (in-range k)))
+; all-nodes-colored
+(define (cnf-all-nodes-colored graph k lookup)
+  (for/list ([n (nodes graph)])
+    (cnf-node-has-at-least-one-color n k lookup)))
 
-(define (node-colored-with-k node c size)
-  ; list-from-to node*size node*size+k
-  (* (+ node 1) (+ c 1))
+(define (cnf-node-has-at-least-one-color node k lookup)
+  (for/list ([c  (in-range k)])
+    (node-colored-with-k node c lookup)))
+
+(define (node-colored-with-k node c lookup)
+  (hash-ref lookup (list node c))
   )
 
+; no-neighbors-share-colors
+(define (cnf-no-edges-share-colors graph k lookup proxy-var-counter)
+  ;(for/list ([e (edges graph)])
+  ;  (cnf-edge-doesnt-share-color (car e) (cdr e) k lookup proxy-var-counter)))
+  (for/fold ([r (list )])
+            ([e (edges graph)])
+    (append r (cnf-edge-doesnt-share-color (car e) (cdr e) k lookup proxy-var-counter))))
 
-(node-colored-with-k 1 2 3)
+(define (cnf-edge-doesnt-share-color node1 node2 k lookup proxy-var-counter)
+  ;(for/list ([c (in-range k)])
+  ;  (cnf-xor node1 node2 c lookup proxy-var-counter)))
+  (for/fold ([r (list )])
+            ([c (in-range k)])
+    (append r (cnf-xor node1 node2 c lookup proxy-var-counter))))
+  
+(define (cnf-xor node1 node2 k lookup proxy-var-counter)
+  (let ([p (proxy-var node1 node2 k lookup proxy-var-counter)]
+        [n1 (node-colored-with-k node1 k lookup)]
+        [n2 (node-colored-with-k node2 k lookup)])
+    (list (list (- p) (- n1) (- n2) )
+          (list (- p)    n1     n2  )
+          (list    p  (- n1)    n2  )
+          (list    p     n1  (- n2) ))))
+
+; from http://stackoverflow.com/questions/8508845/static-variables-in-scheme-racket
+(define (make-counter n)
+  (lambda ()
+    (set! n (add1 n))
+    n))
+
+(define (proxy-var node1 node2 k lookup proxy-var-counter)
+  (proxy-var-counter))
+  

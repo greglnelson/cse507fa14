@@ -23,8 +23,24 @@ small-problems
 (append (node-color-pairs 0 2) (node-color-pairs 1 2))
 (all-node-color-pairs small-graph 2)
 
-(make-hash-node-color-to-variable small-graph 1) 
+(define h (make-hash-node-color-to-variable small-graph 3))
 (hash-has-key? (make-hash-node-color-to-variable small-graph 1) (list 0 0))
+
+; silly "determinism" test that doesn't work
+(check-equal? (make-hash-node-color-to-variable small-graph 3) (make-hash-node-color-to-variable small-graph 3) )
+
+
+; have right number of clauses in basic cnf
+(define (cnf-test graph k)
+  (define lookup (make-hash-node-color-to-variable graph k))
+  (define proxy-var-counter (make-counter (+ 1 (hash-count lookup))))
+  (define cnf (make-cnf graph k lookup proxy-var-counter))
+  (check-equal? (+ (node-count graph) (* 4 k (edge-count graph))) (length cnf)) ; cnf right size
+  )
+
+(for ([k (in-range 30)])
+  (cnf-test small-graph k))
+
 
 ; all nodes in hash
 (for ([k (in-range 30)])
@@ -32,10 +48,14 @@ small-problems
          (for ([x (nodes small-graph)])
            (for ([c (in-range k)])
                (check-pred (curry hash-has-key? h) (list x c) )) )))
-(node-count small-graph)
-(for ([x (nodes small-graph)])
+
+; cnf-node-has-at-least-one-color is uniq and length == k
+
+#|(for ([x (nodes small-graph)])
   (print x))
 (all-node-color-pairs  small-graph 1)
+|#
+
 ;(check-eq? (make-hash-node-color-to-variable small-graph 1) X )
 ;(let ([pairs (all-node-color-pairs small-graph 1)])
 ;    (for/hash ([kk pairs]
