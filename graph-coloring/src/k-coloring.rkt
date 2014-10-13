@@ -27,9 +27,12 @@
 ; Add another symmetry breakage by degree of node
 (define (k-coloring graph k [solver (lingeling)])
   (define lookup (make-hash-node-color-to-variable graph k))
-  (define proxy-var-counter (make-counter (+ 1 (hash-count lookup))))
+  (define proxy-var-counter (make-counter (+ 2 (hash-count lookup))))
+  (define first-proxy-var (proxy-var-counter))
   (define cnf (make-cnf graph k lookup proxy-var-counter))
-  cnf)
+  (define solution (time (solve cnf)))
+  (define reverse-lookup (reverse-hash lookup))
+  (node-coloring graph solution lookup first-proxy-var))
   
   
   
@@ -46,7 +49,7 @@
   ;(make-hash (map cons (all-node-color-pairs graph k) (in-range
   (let ([pairs (all-node-color-pairs graph k)])
     (for/hash ([key pairs]
-             [v (in-range (length pairs))])
+             [v (in-range 1 (+ (length pairs) 1) 1)])
     (values key v))))
     ; actually make this make a list of pairs, one list goes one way the other the other
     ; THEN test
@@ -54,7 +57,6 @@
     ; then wrap them with (var-for-node-color) or just access hash directly
     ; then test on the small graph example with the solver,
     ;   expanding the different sections by manually expanding the NANDs for edges
-
 
 (define (all-node-color-pairs graph k)
   (for/fold ([r (list )])
@@ -65,6 +67,30 @@
 (define (node-color-pairs n k)
   (for/list ([c (in-range k)])
     (list n c)))
+
+(define (reverse-hash h)
+  (make-hash (hash-map h (lambda (k v) (cons v k))))
+  )
+
+(define (node-coloring-debug graph interp lookup first-proxy-var)
+  (define rl (reverse-hash lookup)) ; vector
+  (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
+  (let ([is-a-node-coloring (lambda (lit) (and (positive? lit) (< lit first-proxy-var)))])
+    (map (lambda (literal)
+         (cond
+           [(is-a-node-coloring literal) (let ([node-color (hash-ref rl literal)]) 
+                                  (printf " (car node-color)~a (cdr node-color)~a" (car node-color) (car (cdr node-color))))])) interp))
+  coloring)
+
+(define (node-coloring graph interp lookup first-proxy-var)
+  (define rl (reverse-hash lookup)) ; vector
+  (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
+  (let ([is-a-node-coloring (lambda (lit) (and (positive? lit) (< lit first-proxy-var)))])
+    (map (lambda (literal)
+         (cond
+           [(is-a-node-coloring literal) (let ([node-color (hash-ref rl literal)]) 
+                                  (vector-set! coloring (car node-color) (car (cdr node-color))))])) interp))
+  coloring)
 
 ; all-nodes-colored
 (define (cnf-all-nodes-colored graph k lookup)
@@ -92,13 +118,24 @@
   ;  (cnf-xor node1 node2 c lookup proxy-var-counter)))
   (for/fold ([r (list )])
             ([c (in-range k)])
-    (append r (cnf-xor node1 node2 c lookup proxy-var-counter))))
-  
+    (append r (cnf-nand node1 node2 c lookup proxy-var-counter))))
+
+(define (cnf-nand node1 node2 k lookup proxy-var-counter)
+  (let ([p (proxy-var node1 node2 k lookup proxy-var-counter)]
+        [n1 (node-colored-with-k node1 k lookup)]
+        [n2 (node-colored-with-k node2 k lookup)])
+    (list (list    p                )
+          (list (- p) (- n1) (- n2) )
+          (list    p     n1         )
+          (list    p            n2  ))))
+
+; not used
 (define (cnf-xor node1 node2 k lookup proxy-var-counter)
   (let ([p (proxy-var node1 node2 k lookup proxy-var-counter)]
         [n1 (node-colored-with-k node1 k lookup)]
         [n2 (node-colored-with-k node2 k lookup)])
-    (list (list (- p) (- n1) (- n2) )
+    (list (list    p                )
+          (list (- p) (- n1) (- n2) )
           (list (- p)    n1     n2  )
           (list    p  (- n1)    n2  )
           (list    p     n1  (- n2) ))))

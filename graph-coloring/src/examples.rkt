@@ -40,7 +40,7 @@ small-problems
   (printf "valid-coloring? ~a\n" (valid-coloring? graph coloring)))
 
 ; Uncomment to test your encoding of small-problem:
-; (run small-problem)
+;(run (first small-problems))
 
 ; A SAT solver accepts a CNF formula, represented as a list of lists of 
 ; integers, and returns #f or an interpretation, depending on whether the 
