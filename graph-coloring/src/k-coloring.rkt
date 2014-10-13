@@ -40,15 +40,18 @@
   )
 
 (define (make-hash-node-color-to-variable graph k)
-  #f;(for/hash ([k (all-node-color-pairs graph k)] [v (in-range 1 (length ((all-node-color-pairs graph k)))]
-    ;  (values k v)
+  ;(make-hash (map cons (all-node-color-pairs graph k) (in-range
+  (let ([pairs (all-node-color-pairs graph k)])
+    (for/hash ([key pairs]
+             [v (in-range (length pairs))])
+    (values key v))))
     ; actually make this make a list of pairs, one list goes one way the other the other
     ; THEN test
     ; then put into let assignments into the main section above
     ; then wrap them with (var-for-node-color) or just access hash directly
     ; then test on the small graph example with the solver,
     ;   expanding the different sections by manually expanding the NANDs for edges
-  )
+
 
 (define (all-node-color-pairs graph k)
   (for/fold ([r (list )])
