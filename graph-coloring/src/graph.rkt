@@ -90,14 +90,20 @@
 ; produces a dot visualization of the graph and coloring.
 ; If the coloring includes more than 21 colors, no colors 
 ; are displayed.
-(define (visualize g [coloring #f])
-  (and coloring (not (= (node-count g) (vector-length coloring)))
-       (raise-argument-error 'visualize "a valid coloring?" coloring))
-  (define-values (p p-out p-in p-err)
-    (subprocess #f #f #f (find-executable-path "dot") "-Tjpeg"))
-  (graph->dot g coloring p-in)
-  (close-output-port p-in)
-  (read-bitmap p-out 'jpeg))
+(define (visualize g [coloring #f]) 
+(and coloring (not (= (node-count g) (vector-length coloring))) 
+(raise-argument-error 'visualize "a valid coloring?" coloring)) 
+(define-values (p p-out p-in p-err) 
+(subprocess #f #f #f (find-executable-path "/usr/local/bin/dot") 
+"-Tpng")) ; change format to png, I also had to put in path here manually but you may not 
+; these next three lines show how to make a string that acts as an output stream 
+; so you can watch what racket is sending out 
+; (define gout (open-output-string)) 
+; (graph->dot g coloring gout) 
+; (print (get-output-string gout)) 
+(graph->dot g coloring p-in) 
+(close-output-port p-in) 
+(read-bitmap p-out 'png)) ; change to read output as png 
   
 ; Given a graph and, optionally, a coloring specification,
 ; produces a dot file for the graph and coloring.
@@ -129,7 +135,6 @@
                 (for/vector ([c coloring])
                   (hash-ref colormap c)))))))
                 
-              
 (define palette
   '("#51574a" "#447c69" "#74c493"
     "#8e8c6d" "#e4bf80" "#e9d78e"

@@ -1,3 +1,4 @@
+
 #lang racket
 
 (require "graph.rkt" "problems.rkt" "solver.rkt" "k-coloring.rkt")
@@ -19,13 +20,14 @@ small-problems
 
 ; The following vector represents a valid coloring for small-graph (see k-coloring.rkt):
 (define small-graph-coloring #(0 1 3 1 0 0 1 3 3 0 2))
+;(define small-graph-coloring #(1 2 3 4 5 6 7 8 9 10 11))
 
 (valid-coloring? small-graph small-graph-coloring)
 
 ; If you have dot installed on your system, uncomment the following 
 ; lines to visualize small-graph:
-;(dot "/opt/local/bin/dot")
-;(visualize small-graph small-graph-coloring)
+(dot "/usr/local/bin/dot")
+(visualize small-graph small-graph-coloring)
 
 ; Runs your k-coloring procedure (see k-coloring.rkt) on the provided problem, 
 ; printing timing data and #t/#f depending on whether the produced 
