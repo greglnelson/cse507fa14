@@ -30,15 +30,43 @@ small-problems
   )
 
 ;(reverse-hash (make-hash-node-color-to-variable small-graph 1))
-(run (first small-problems))
+;(run (first small-problems))
+(map (lambda (x) (run x)) problems)
+
+
+
+#|
+(for ([k (in-range 1 105 1)])
+(for ([n (in-range 1000)])
+  (for ([c (in-range k)])
+    (let ([o (find-offset 1 k)])
+    (check-equal? n (deref-node (nk n c o) o))
+    (check-equal? c (deref-color (nk n c o) o))
+      ))))
+|#
+
+#|
+(for ([k (in-range 97 108 1)])
+(for ([n (in-range 100)])
+  (for ([c (in-range k)])
+    (let ([o (find-offset 1 k)])
+    (check-equal? n (deref-node (nk n c o) o))
+    (check-equal? c (deref-color (nk n c o) o))
+      ))))
+|#
+
+;(quotient lit l)
+
+
 
 ; TODO if needed variable numbers for graph encoding are unique
 
 ; have right number of clauses in basic cnf
 (define (cnf-test graph k)
-  (define lookup (make-hash-node-color-to-variable graph k))
-  (define proxy-var-counter (make-counter (+ 1 (hash-count lookup))))
-  (define cnf (make-cnf graph k lookup proxy-var-counter))
+  (define offset (find-offset 1 k))
+  (define proxy-var-counter (make-counter (* 10 (to-lit (node-count graph) k offset))))
+  (define first-proxy-var (proxy-var-counter))
+  (define cnf (make-cnf graph k offset proxy-var-counter))
   (check-equal? (+ (node-count graph) (* 4 k (edge-count graph)))
                 (length cnf)) ; cnf right size
   ;(printf "cnf for k:~a ~a\n" k cnf)
@@ -67,10 +95,11 @@ small-problems
 (hash-has-key? (make-hash-node-color-to-variable small-graph 1) (list 0 0))
 
 (reverse-hash (make-hash-node-color-to-variable small-graph 1))
-#|(for ([x (nodes small-graph)])
+(for ([x (nodes small-graph)])
   (print x))
 (all-node-color-pairs  small-graph 1)
-|#
+
+
 
 ;(check-eq? (make-hash-node-color-to-variable small-graph 1) X )
 ;(let ([pairs (all-node-color-pairs small-graph 1)])
