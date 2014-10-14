@@ -25,8 +25,8 @@ small-problems
   (define k (problem-colors problem))
   (define coloring (time (k-coloring graph k)))
   (printf "coloring: ~a\n" coloring)
-  (printf "valid-coloring? ~a\n" (valid-coloring? graph coloring))
-  (visualize graph coloring)
+  (printf "valid-coloring? ~a\n" (time (valid-coloring? graph coloring)))
+  ;(visualize graph coloring)
   )
 
 ;(reverse-hash (make-hash-node-color-to-variable small-graph 1))
