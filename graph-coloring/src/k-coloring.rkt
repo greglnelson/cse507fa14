@@ -29,16 +29,22 @@
   (define offset (find-offset 1 k))
   (define proxy-var-start (* 10 (to-lit (node-count graph) k offset)))
   (define cnf (make-cnf graph k offset proxy-var-start))
-  (print "pre-solve")
+  ;(print "pre-solve")
+  ;(log-gc "pre-solve")
   (define solution (time (solve cnf)))
   ;(print solution)
-  (print "post-solve")
+  ;(log-gc "post-solve")
   ;(define reverse-lookup (time (reverse-hash lookup)))
-  ;(print "post reverse")
-  (node-coloring graph solution offset proxy-var-start))
+  ;(log-gc "pre-coloring")
+  (define the-coloring (time (node-coloring graph solution offset proxy-var-start)))
+  ;(log-gc "post-coloring")
+  the-coloring)
   
   
-  
+(define (log-gc comment)
+  (printf "pre ~a\n" comment )
+  (time (collect-garbage))
+  (printf "post ~a\n" comment ))
   
   ;(error 'k-coloring "not implemented yet!"))
 
@@ -96,12 +102,10 @@
 
 ; no-neighbors-share-colors
 (define (cnf-no-edges-share-colors graph k offset proxy-var-start)
-  ;(for/list ([e (edges graph)])
-  ;  (cnf-edge-doesnt-share-color (car e) (cdr e) k lookup proxy-var-counter)))
-  (for/fold ([r (list )])
+  (apply append (for/list
             ([e (edges graph)])
             ; [proxy-offset (for/list ([x (in-range (edge-count graph))]) x)])
-    (append r (cnf-edge-doesnt-share-color (car e) (cdr e) k offset proxy-var-start))))
+    (cnf-edge-doesnt-share-color (car e) (cdr e) k offset proxy-var-start))))
 
 (define (cnf-edge-doesnt-share-color node1 node2 k offset proxy-var-start)
   ;(for/list ([c (in-range k)])
@@ -123,7 +127,7 @@
 
 ;(define (recurse-edges 
 
-; deprecated code
+; deprecated code ---------------------------------------============================
 
 (define (make-hash-node-color-to-variable graph k)
   ;(make-hash (map cons (all-node-color-pairs graph k) (in-range
