@@ -27,26 +27,25 @@
 ; Add another symmetry breakage by degree of node
 (define (k-coloring graph k [solver (lingeling)])
   (define offset (find-offset 1 k))
-  (define proxy-var-counter (make-counter (* 10 (to-lit (node-count graph) k offset))))
-  (define first-proxy-var (proxy-var-counter))
-  (define cnf (make-cnf graph k offset proxy-var-counter))
-  (print "pre solve")
+  (define proxy-var-start (* 10 (to-lit (node-count graph) k offset)))
+  (define cnf (make-cnf graph k offset proxy-var-start))
+  (print "pre-solve")
   (define solution (time (solve cnf)))
   ;(print solution)
-  (print "post solve")
+  (print "post-solve")
   ;(define reverse-lookup (time (reverse-hash lookup)))
-  (print "post reverse")
-  (time (node-coloring graph solution offset first-proxy-var)))
+  ;(print "post reverse")
+  (node-coloring graph solution offset proxy-var-start))
   
   
   
   
   ;(error 'k-coloring "not implemented yet!"))
 
-(define (make-cnf graph k offset proxy-var-counter)
+(define (make-cnf graph k offset proxy-var-start)
   (append
    (cnf-all-nodes-colored graph k offset)
-   (cnf-no-edges-share-colors graph k offset proxy-var-counter )))
+   (cnf-no-edges-share-colors graph k offset proxy-var-start )))
 
 
 (define (make-hash-node-color-to-variable graph k)
@@ -148,28 +147,30 @@
   )
 
 ; no-neighbors-share-colors
-(define (cnf-no-edges-share-colors graph k offset proxy-var-counter)
+(define (cnf-no-edges-share-colors graph k offset proxy-var-start)
   ;(for/list ([e (edges graph)])
   ;  (cnf-edge-doesnt-share-color (car e) (cdr e) k lookup proxy-var-counter)))
   (for/fold ([r (list )])
             ([e (edges graph)])
-    (append r (cnf-edge-doesnt-share-color (car e) (cdr e) k offset proxy-var-counter))))
+            ; [proxy-offset (for/list ([x (in-range (edge-count graph))]) x)])
+    (append r (cnf-edge-doesnt-share-color (car e) (cdr e) k offset proxy-var-start))))
 
-(define (cnf-edge-doesnt-share-color node1 node2 k offset proxy-var-counter)
+(define (cnf-edge-doesnt-share-color node1 node2 k offset proxy-var-start)
   ;(for/list ([c (in-range k)])
   ;  (cnf-xor node1 node2 c lookup proxy-var-counter)))
   (for/fold ([r (list )])
             ([c (in-range k)])
-    (append r (cnf-nand node1 node2 c offset proxy-var-counter))))
+    (append r (cnf-nand node1 node2 c offset proxy-var-start))))
 
-(define (cnf-nand node1 node2 k offset proxy-var-counter)
-  (let ([p (proxy-var node1 node2 k offset proxy-var-counter)]
+
+(define (cnf-nand node1 node2 k offset proxy-var-start)
+  (let (;[p (proxy-var node1 node2 k offset proxy-var-start)]
         [n1 (to-lit node1 k offset)]
         [n2 (to-lit node2 k offset)])
-    (list (list    p                )
-          (list (- p) (- n1) (- n2) )
-          (list    p     n1         )
-          (list    p            n2  ))))
+    (list ;(list    p                )
+          (list (- n1) (- n2) ))))
+         ; (list    p     n1         )
+         ; (list    p            n2  ))))
 
 ; not used
 (define (cnf-xor node1 node2 k lookup proxy-var-counter)
@@ -188,6 +189,9 @@
     (set! n (add1 n))
     n))
 
-(define (proxy-var node1 node2 k offset proxy-var-counter)
-  (proxy-var-counter))
+
+(define (proxy-var node1 node2 k offset proxy-var-start)
+  (+ k proxy-var-start))
+
+;(define (recurse-edges 
   

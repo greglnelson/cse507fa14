@@ -10,6 +10,13 @@
           (< (problem-edges p) 30))
         problems))
 
+(define dsj
+  (filter (lambda (p) 
+          (eq? (problem-difficulty p) 'easy)
+          (eq? (problem-nodes p) 500)
+          (eq? (problem-edges p) 3555))
+        problems))
+
 ; Print them (there is just one):
 small-problems
 
@@ -33,7 +40,45 @@ small-problems
 ;(run (first small-problems))
 (map (lambda (x) (run x)) problems)
 
+(define (fold-stress times graph)
+  (for ([t (in-range times)])
+    (for/fold ([r (list )])
+            ([e (edges graph)]
+             [proxy-offset (for/list ([x (in-range (edge-count graph))]) x)])
+    (append r (list e (* proxy-offset t))))))
 
+(define (recurse-make times edges proxy-offset proxy-offset-max)
+  (if (eq? proxy-offset proxy-offset-max)
+      (list (* proxy-offset times))
+      (cons (list (first edges) (* proxy-offset times)) (recurse-make times (rest edges) (+ proxy-offset 1) proxy-offset-max))))
+
+(define (recurse-nand edges offset)
+  (if (empty? edges)
+      empty
+      (cons (list (first edges)) (recurse-nand (rest edges) offset))))
+
+; could return if too slow still
+(define (recurse-stress times graph)
+  (for ([t (in-range times)])
+    (recurse-make t (for/list ([e (edges graph)]) e) 0 (edge-count graph))))
+
+
+;(recurse-nand (stream->list (edges (problem->graph (first small-problems)))) 10)
+
+#|
+(time (fold-stress 1 (problem->graph (first dsj))))
+(time (fold-stress 2 (problem->graph (first dsj))))
+(time (fold-stress 4 (problem->graph (first dsj))))
+(time (fold-stress 8 (problem->graph (first dsj))))
+
+(time (recurse-stress 1 (problem->graph (first dsj))))
+(time (recurse-stress 2 (problem->graph (first dsj))))
+(time (recurse-stress 4 (problem->graph (first dsj))))
+(time (recurse-stress 8 (problem->graph (first dsj))))
+(time (recurse-stress 8000 (problem->graph (first dsj))))
+|#
+;(define gg (problem->graph (first dsj)))
+;(recurse-make 10 (for/list ([e (edges gg)]) e) 0 (edge-count gg))
 
 #|
 (for ([k (in-range 1 105 1)])
@@ -64,10 +109,9 @@ small-problems
 ; have right number of clauses in basic cnf
 (define (cnf-test graph k)
   (define offset (find-offset 1 k))
-  (define proxy-var-counter (make-counter (* 10 (to-lit (node-count graph) k offset))))
-  (define first-proxy-var (proxy-var-counter))
-  (define cnf (make-cnf graph k offset proxy-var-counter))
-  (check-equal? (+ (node-count graph) (* 4 k (edge-count graph)))
+  (define proxy-var-start (* 10 (to-lit (node-count graph) k offset)))
+  (define cnf (make-cnf graph k offset proxy-var-start))
+  (check-equal? (+ (node-count graph) (* k (edge-count graph)))
                 (length cnf)) ; cnf right size
   ;(printf "cnf for k:~a ~a\n" k cnf)
   )
@@ -86,7 +130,7 @@ small-problems
                (check-pred (curry hash-has-key? h) (list x c) )) )))
 
 ; cnf-node-has-at-least-one-color is uniq and length == k
-
+#|
 ; old tests
 (append (node-color-pairs 0 2) (node-color-pairs 1 2))
 (all-node-color-pairs small-graph 2)
@@ -99,7 +143,7 @@ small-problems
   (print x))
 (all-node-color-pairs  small-graph 1)
 
-
+|#
 
 ;(check-eq? (make-hash-node-color-to-variable small-graph 1) X )
 ;(let ([pairs (all-node-color-pairs small-graph 1)])
