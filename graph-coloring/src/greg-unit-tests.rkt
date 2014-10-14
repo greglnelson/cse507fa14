@@ -113,7 +113,7 @@ small-problems
   (define cnf (make-cnf graph k offset proxy-var-start))
   (check-equal? (+ (node-count graph) (* k (edge-count graph)))
                 (length cnf)) ; cnf right size
-  ;(printf "cnf for k:~a ~a\n" k cnf)
+  (printf "cnf for k:~a ~a\n" k cnf)
   )
 
 (for ([k (in-range 30)])

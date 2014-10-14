@@ -48,18 +48,6 @@
    (cnf-no-edges-share-colors graph k offset proxy-var-start )))
 
 
-(define (make-hash-node-color-to-variable graph k)
-  ;(make-hash (map cons (all-node-color-pairs graph k) (in-range
-  (let ([pairs (all-node-color-pairs graph k)])
-    (for/hash ([key pairs]
-             [v (in-range 1 (+ (length pairs) 1) 1)])
-    (values key v))))
-    ; actually make this make a list of pairs, one list goes one way the other the other
-    ; THEN test
-    ; then put into let assignments into the main section above
-    ; then wrap them with (var-for-node-color) or just access hash directly
-    ; then test on the small graph example with the solver,
-    ;   expanding the different sections by manually expanding the NANDs for edges
 (define (find-offset l k)
   (if (<= l k)
       (find-offset (* 10 l) k)
@@ -75,29 +63,8 @@
 (define (deref-color lit offset)
   (- lit (* (+ (deref-node lit offset) 1) offset)))
 
-(define (all-node-color-pairs graph k)
-  (for/fold ([r (list )])
-            ([n (nodes graph)])
-    (append r (node-color-pairs n k)))
-  )
 
-(define (node-color-pairs n k)
-  (for/list ([c (in-range k)])
-    (list n c)))
 
-(define (reverse-hash h)
-  (make-hash (hash-map h (lambda (k v) (cons v k))))
-  )
-
-(define (node-coloring-debug graph interp lookup first-proxy-var)
-  (define rl (reverse-hash lookup)) ; vector
-  (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
-  (let ([is-a-node-coloring (lambda (lit) (and (positive? lit) (< lit first-proxy-var)))])
-    (map (lambda (literal)
-         (cond
-           [(is-a-node-coloring literal) (let ([node-color (hash-ref rl literal)]) 
-                                  (printf " (car node-color)~a (cdr node-color)~a" (car node-color) (car (cdr node-color))))])) interp))
-  coloring)
 
 (define (node-coloring graph interp offset first-proxy-var)
   (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
@@ -108,30 +75,11 @@
             (vector-set! coloring (deref-node literal offset) (deref-color literal offset))])))
           
   coloring)
-#|
-(define (node-coloring graph interp lookup first-proxy-var)
-  (define rl (reverse-hash lookup)) ; vector
-  (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
-  (let ([is-a-node-coloring (lambda (lit) ((< lit first-proxy-var)))])
-    (for ([literal interp])
-      #:break (not (is-a-node-coloring literal))
-      (cond [(positive? literal) 
-          (let ([node-color (hash-ref rl literal)])
-            (vector-set! coloring (car node-color) (car (cdr node-color))))])))
-          
-  coloring)
-|#
-#|
-(define (node-coloring graph interp lookup first-proxy-var)
-  (define rl (reverse-hash lookup)) ; vector
-  (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
-  (let ([is-a-node-coloring (lambda (lit) (and (positive? lit) (< lit first-proxy-var)))])
-    (map (lambda (literal)
-         (cond
-           [(is-a-node-coloring literal) (let ([node-color (hash-ref rl literal)]) 
-                                  (vector-set! coloring (car node-color) (car (cdr node-color))))])) interp))
-  coloring)
-|#
+
+; in index
+; apply append pattern to reduce lists
+; sequences in racket documentation - so use the 
+
 ; all-nodes-colored
 (define (cnf-all-nodes-colored graph k offset)
   (for/list ([n (nodes graph)])
@@ -158,20 +106,88 @@
 (define (cnf-edge-doesnt-share-color node1 node2 k offset proxy-var-start)
   ;(for/list ([c (in-range k)])
   ;  (cnf-xor node1 node2 c lookup proxy-var-counter)))
-  (for/fold ([r (list )])
-            ([c (in-range k)])
-    (append r (cnf-nand node1 node2 c offset proxy-var-start))))
+  (for/list ([c (in-range k)])
+    (cnf-nand node1 node2 c offset proxy-var-start)))
 
 
 (define (cnf-nand node1 node2 k offset proxy-var-start)
   (let (;[p (proxy-var node1 node2 k offset proxy-var-start)]
         [n1 (to-lit node1 k offset)]
         [n2 (to-lit node2 k offset)])
-    (list ;(list    p                )
-          (list (- n1) (- n2) ))))
+    ;(list ;(list    p                )
+          (list (- n1) (- n2) )))
          ; (list    p     n1         )
          ; (list    p            n2  ))))
 
+
+
+;(define (recurse-edges 
+
+; deprecated code
+
+(define (make-hash-node-color-to-variable graph k)
+  ;(make-hash (map cons (all-node-color-pairs graph k) (in-range
+  (let ([pairs (all-node-color-pairs graph k)])
+    (for/hash ([key pairs]
+             [v (in-range 1 (+ (length pairs) 1) 1)])
+    (values key v))))
+    ; actually make this make a list of pairs, one list goes one way the other the other
+    ; THEN test
+    ; then put into let assignments into the main section above
+    ; then wrap them with (var-for-node-color) or just access hash directly
+    ; then test on the small graph example with the solver,
+    ;   expanding the different sections by manually expanding the NANDs for edges
+
+(define (all-node-color-pairs graph k)
+  (for/fold ([r (list )])
+            ([n (nodes graph)])
+    (append r (node-color-pairs n k)))
+  )
+
+(define (node-color-pairs n k)
+  (for/list ([c (in-range k)])
+    (list n c)))
+
+(define (reverse-hash h)
+  (make-hash (hash-map h (lambda (k v) (cons v k))))
+  )
+
+(define (node-coloring-debug graph interp lookup first-proxy-var)
+  (define rl (reverse-hash lookup)) ; vector
+  (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
+  (let ([is-a-node-coloring (lambda (lit) (and (positive? lit) (< lit first-proxy-var)))])
+    (map (lambda (literal)
+         (cond
+           [(is-a-node-coloring literal) (let ([node-color (hash-ref rl literal)]) 
+                                  (printf " (car node-color)~a (cdr node-color)~a" (car node-color) (car (cdr node-color))))])) interp))
+  coloring)
+
+#|
+(define (node-coloring graph interp lookup first-proxy-var)
+  (define rl (reverse-hash lookup)) ; vector
+  (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
+  (let ([is-a-node-coloring (lambda (lit) ((< lit first-proxy-var)))])
+    (for ([literal interp])
+      #:break (not (is-a-node-coloring literal))
+      (cond [(positive? literal) 
+          (let ([node-color (hash-ref rl literal)])
+            (vector-set! coloring (car node-color) (car (cdr node-color))))])))
+          
+  coloring)
+|#
+
+#|
+(define (node-coloring graph interp lookup first-proxy-var)
+  (define rl (reverse-hash lookup)) ; vector
+  (define coloring (make-vector (node-count graph))) ; todo speedup by ignore vars after graph size + 1
+  (let ([is-a-node-coloring (lambda (lit) (and (positive? lit) (< lit first-proxy-var)))])
+    (map (lambda (literal)
+         (cond
+           [(is-a-node-coloring literal) (let ([node-color (hash-ref rl literal)]) 
+                                  (vector-set! coloring (car node-color) (car (cdr node-color))))])) interp))
+  coloring)
+|#
+  
 ; not used
 (define (cnf-xor node1 node2 k lookup proxy-var-counter)
   (let ([p (proxy-var node1 node2 k lookup proxy-var-counter)]
@@ -192,6 +208,3 @@
 
 (define (proxy-var node1 node2 k offset proxy-var-start)
   (+ k proxy-var-start))
-
-;(define (recurse-edges 
-  
